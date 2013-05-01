@@ -96,7 +96,7 @@ public class BreakoutBoardView extends SurfaceView implements SurfaceHolder.Call
         
         // Game constants
         private static final int NBR_OF_BLOCKS = 6;
-        private static final double DOT_SPEED = 30.0; 
+        private static final double DOT_SPEED = 200.0; 
         
         private SurfaceHolder surfaceHolder;
         private boolean running;
@@ -209,6 +209,24 @@ public class BreakoutBoardView extends SurfaceView implements SurfaceHolder.Call
             double dx = dot.getVx() * elapsed;
             double dy = dot.getVy() * elapsed;
             dot.move(dx, dy, dot.getVx(), dot.getVy());
+            
+            // Check if dot collides with paddle
+            if (dot.isColliding(paddle)) {
+                dot.move(0, 0, dot.getVx(), -dot.getVy());
+            }
+            
+            // Check if dot hits walls
+            if (dot.getX() < 0 || dot.getX() > canvasWidth) {
+                dot.move(0, 0, -dot.getVx(), dot.getVy());
+            }
+            if (dot.getY() < 0) {
+                dot.move(0, 0, dot.getVx(), -dot.getVy());
+            }
+            
+            // Check if game over
+            if (dot.getY() > canvasHeight) {
+                reset();
+            }
 
             lastTime = now;
         }
