@@ -73,12 +73,6 @@ public class BreakoutBoardView extends SurfaceView implements SurfaceHolder.Call
     }
 
     @Override
-    public void onWindowFocusChanged(boolean hasWindowFocus) {
-        if (!hasWindowFocus)
-            thread.reset();
-    }
-
-    @Override
     public boolean onTouch(View v, MotionEvent event) {
         switch (event.getAction()) {
             case MotionEvent.ACTION_MOVE:
