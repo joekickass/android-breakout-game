@@ -182,9 +182,11 @@ public class BreakoutBoardView extends SurfaceView implements SurfaceHolder.Call
             double dotSide = blockHeight;
             double dotX = paddleX + (paddleWidth - dotSide) / 2;
             double dotY = paddleY - dotSide;
-            double angle = Math.random() * 2 * Math.PI;
-            double vx = DOT_SPEED * Math.sin(angle);
-            double vy = DOT_SPEED * Math.cos(angle);
+            double startAngle = Math.PI * Math.random() * -0.25; // Starting angle should be somewhat upwards
+            Log.d(TAG, "seed:" + startAngle);
+            double vx = DOT_SPEED * Math.sin(startAngle);
+            double vy = DOT_SPEED * Math.cos(startAngle);
+            Log.d(TAG, "vx:" + vx + ", vy:" + vy);
             dot = new Dot((int) dotX, (int) dotY, (int) dotSide, (int) dotSide, vx, vy);
             gameEntities.add(dot);
         }
