@@ -1,16 +1,29 @@
 package se.otaino2.breakoutgame.model;
 
 import android.graphics.Color;
-import android.graphics.Rect;
 
-public class Dot extends Entity {
+public class Dot extends MovableEntity {
 
-    public Dot(int posX, int posY, int width, int height) {
+    private double vx;
+    private double vy;
+
+    public Dot(int posX, int posY, int width, int height, double vx, double vy) {
         super(posX, posY, width, height, Color.BLACK);
+        this.vx = vx;
+        this.vy = vy;
     }
     
-    public void offset(int dx, int dy) {
-        Rect rect = getRect();
-        rect.offset(dx, dy);
+    public void move(double dx, double dy, double vx, double vy) {
+        super.move(dx, dy);
+        this.vx = vx;
+        this.vy = vy;
+    }
+    
+    public double getVx() {
+        return vx;
+    }
+    
+    public double getVy() {
+        return vy;
     }
 }

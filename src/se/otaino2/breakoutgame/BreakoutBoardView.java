@@ -26,7 +26,7 @@ public class BreakoutBoardView extends SurfaceView implements SurfaceHolder.Call
     private BreakoutBoardThread thread;
     
     // Touch event position for the paddle
-    private float lastKnownPaddlePosition;
+    private double lastKnownPaddlePosition;
 
     public BreakoutBoardView(Context context, AttributeSet attrs) {
         super(context, attrs);
@@ -42,7 +42,7 @@ public class BreakoutBoardView extends SurfaceView implements SurfaceHolder.Call
     @Override
     public void surfaceCreated(SurfaceHolder holder) {
         Log.d(TAG, "Surface created, starting new thread...");
-        thread = new BreakoutBoardThread(holder, getContext());
+        thread = new BreakoutBoardThread(holder);
         thread.setRunning(true);
         thread.start();
     }
@@ -91,12 +91,15 @@ public class BreakoutBoardView extends SurfaceView implements SurfaceHolder.Call
 
     class BreakoutBoardThread extends Thread {
 
+        // Debug 
         private static final String TAG = "BreakoutBoardThread";
-        private static final double NBR_OF_BLOCKS = 6;
+        
+        // Game constants
+        private static final int NBR_OF_BLOCKS = 6;
+        private static final double DOT_SPEED = 30.0; 
+        
         private SurfaceHolder surfaceHolder;
-        private Context context;
         private boolean running;
-        private int state;
         private int canvasWidth;
         private int canvasHeight;
         private Background background;
@@ -108,9 +111,8 @@ public class BreakoutBoardView extends SurfaceView implements SurfaceHolder.Call
         private Paddle paddle;
         private Dot dot;
 
-        public BreakoutBoardThread(SurfaceHolder surfaceHolder, Context context) {
+        public BreakoutBoardThread(SurfaceHolder surfaceHolder) {
             this.surfaceHolder = surfaceHolder;
-            this.context = context;
         }
 
         public void setRunning(boolean running) {
@@ -118,7 +120,9 @@ public class BreakoutBoardView extends SurfaceView implements SurfaceHolder.Call
         }
 
         public void reset() {
-            resetEntities(canvasWidth, canvasHeight);
+            synchronized (surfaceHolder) {
+                resetEntities(canvasWidth, canvasHeight);               
+            }
         }
 
         @Override
@@ -175,16 +179,17 @@ public class BreakoutBoardView extends SurfaceView implements SurfaceHolder.Call
             double paddleY = height - paddleHeight;
             paddle = new Paddle((int) paddleX, (int) paddleY, (int) paddleWidth, (int) paddleHeight);
             // TODO: Thread should not meddle with properties of the view. Refactor...
-            lastKnownPaddlePosition = paddle.getRect().centerX();
+            lastKnownPaddlePosition = paddle.getX();
             gameEntities.add(paddle);
 
             double dotSide = blockHeight;
             double dotX = paddleX + (paddleWidth - dotSide) / 2;
             double dotY = paddleY - dotSide;
-            dot = new Dot((int) dotX, (int) dotY, (int) dotSide, (int) dotSide);
+            double angle = Math.random() * 2 * Math.PI;
+            double vx = DOT_SPEED * Math.sin(angle);
+            double vy = DOT_SPEED * Math.cos(angle);
+            dot = new Dot((int) dotX, (int) dotY, (int) dotSide, (int) dotSide, vx, vy);
             gameEntities.add(dot);
-
-
         }
 
         // Update game entities for next iteration
@@ -198,7 +203,12 @@ public class BreakoutBoardView extends SurfaceView implements SurfaceHolder.Call
             double elapsed = (now - lastTime) / 1000.0;
             
             // Update paddle position
-            paddle.move((int)lastKnownPaddlePosition);
+            paddle.move(lastKnownPaddlePosition);
+            
+            // Update dot position
+            double dx = dot.getVx() * elapsed;
+            double dy = dot.getVy() * elapsed;
+            dot.move(dx, dy, dot.getVx(), dot.getVy());
 
             lastTime = now;
         }
