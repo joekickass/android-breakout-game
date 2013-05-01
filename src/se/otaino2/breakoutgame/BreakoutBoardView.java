@@ -1,6 +1,8 @@
 package se.otaino2.breakoutgame;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Iterator;
 import java.util.List;
 
 import se.otaino2.breakoutgame.model.Background;
@@ -96,7 +98,7 @@ public class BreakoutBoardView extends SurfaceView implements SurfaceHolder.Call
         
         // Game constants
         private static final int NBR_OF_BLOCKS = 6;
-        private static final double DOT_SPEED = 200.0; 
+        private static final double DOT_SPEED = 400.0; 
         
         private SurfaceHolder surfaceHolder;
         private boolean running;
@@ -170,6 +172,7 @@ public class BreakoutBoardView extends SurfaceView implements SurfaceHolder.Call
                 double blockX = i * (blockWidth + blockHeight) + blockHeight;
                 double blockY = 2 * blockHeight;
                 Block b = new Block((int) blockX, (int) blockY, (int) blockWidth, (int) blockHeight);
+                blocks.add(b);
                 gameEntities.add(b);
             }
             
@@ -215,6 +218,17 @@ public class BreakoutBoardView extends SurfaceView implements SurfaceHolder.Call
                 dot.move(0, 0, dot.getVx(), -dot.getVy());
             }
             
+            // Check if dot hits block
+            Iterator<Block> iter = blocks.iterator();
+            while (iter.hasNext()) {
+                Block b = iter.next();
+                if (dot.isColliding(b)) {
+                    iter.remove();
+                    gameEntities.remove(b);
+                    dot.move(0, 0, dot.getVx(), -dot.getVy());
+                }
+            }
+            
             // Check if dot hits walls
             if (dot.getX() < 0 || dot.getX() > canvasWidth) {
                 dot.move(0, 0, -dot.getVx(), dot.getVy());
@@ -227,7 +241,7 @@ public class BreakoutBoardView extends SurfaceView implements SurfaceHolder.Call
             if (dot.getY() > canvasHeight) {
                 reset();
             }
-
+            
             lastTime = now;
         }
 
