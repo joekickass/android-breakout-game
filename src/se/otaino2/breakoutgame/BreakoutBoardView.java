@@ -12,14 +12,21 @@ import android.content.Context;
 import android.graphics.Canvas;
 import android.util.AttributeSet;
 import android.util.Log;
+import android.view.MotionEvent;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
+import android.view.View;
+import android.view.View.OnTouchListener;
 
-public class BreakoutBoardView extends SurfaceView implements SurfaceHolder.Callback {
+public class BreakoutBoardView extends SurfaceView implements SurfaceHolder.Callback, OnTouchListener {
 
     private static final String TAG = "BreakoutBoardView";
-    /** The thread that actually draws the animation */
+
+    // Render thread
     private BreakoutBoardThread thread;
+    
+    // Touch event position for the paddle
+    private float lastKnownPaddlePosition;
 
     public BreakoutBoardView(Context context, AttributeSet attrs) {
         super(context, attrs);
@@ -29,6 +36,7 @@ public class BreakoutBoardView extends SurfaceView implements SurfaceHolder.Call
 
         // SurfaceView must have focus to get touch events
         setFocusable(true);
+        setOnTouchListener(this);
     }
 
     @Override
@@ -68,6 +76,15 @@ public class BreakoutBoardView extends SurfaceView implements SurfaceHolder.Call
             thread.reset();
     }
 
+    @Override
+    public boolean onTouch(View v, MotionEvent event) {
+        switch (event.getAction()) {
+            case MotionEvent.ACTION_MOVE:
+                lastKnownPaddlePosition = event.getX();
+        }
+        return true;
+    }
+
     public BreakoutBoardThread getThread() {
         return thread;
     }
@@ -83,8 +100,13 @@ public class BreakoutBoardView extends SurfaceView implements SurfaceHolder.Call
         private int canvasWidth;
         private int canvasHeight;
         private Background background;
-        private List<Entity> gameEntities;
         private long lastTime;
+        
+        // Entities
+        private List<Entity> gameEntities;
+        private ArrayList<Block> blocks;
+        private Paddle paddle;
+        private Dot dot;
 
         public BreakoutBoardThread(SurfaceHolder surfaceHolder, Context context) {
             this.surfaceHolder = surfaceHolder;
@@ -96,7 +118,7 @@ public class BreakoutBoardView extends SurfaceView implements SurfaceHolder.Call
         }
 
         public void reset() {
-            createEntities(canvasWidth, canvasHeight);
+            resetEntities(canvasWidth, canvasHeight);
         }
 
         @Override
@@ -130,14 +152,14 @@ public class BreakoutBoardView extends SurfaceView implements SurfaceHolder.Call
             synchronized (surfaceHolder) {
                 canvasWidth = width;
                 canvasHeight = height;
-                createEntities(width, height);
-                lastTime = System.currentTimeMillis() + 100;
+                reset();
             }
         }
 
-        private void createEntities(int width, int height) {
+        private void resetEntities(int width, int height) {
             background = new Background(width, height);
             gameEntities = new ArrayList<Entity>();
+            blocks = new ArrayList<Block>();
             double blockWidth = width / (1.1 * NBR_OF_BLOCKS + 0.1);
             double blockHeight = 0.1 * blockWidth;
             for (int i = 0; i < NBR_OF_BLOCKS; i++) {
@@ -146,19 +168,23 @@ public class BreakoutBoardView extends SurfaceView implements SurfaceHolder.Call
                 Block b = new Block((int) blockX, (int) blockY, (int) blockWidth, (int) blockHeight);
                 gameEntities.add(b);
             }
-
-            double dotSide = blockHeight / 2;
-            double dotX = width / 2;
-            double dotY = height / 2;
-            Dot d = new Dot((int) dotX, (int) dotY, (int) dotSide, (int) dotSide);
-            gameEntities.add(d);
-
+            
             double paddleWidth = blockWidth * 2;
             double paddleHeight = blockHeight * 2;
             double paddleX = (width - paddleWidth) / 2;
             double paddleY = height - paddleHeight;
-            Paddle p = new Paddle((int) paddleX, (int) paddleY, (int) paddleWidth, (int) paddleHeight);
-            gameEntities.add(p);
+            paddle = new Paddle((int) paddleX, (int) paddleY, (int) paddleWidth, (int) paddleHeight);
+            // TODO: Thread should not meddle with properties of the view. Refactor...
+            lastKnownPaddlePosition = paddle.getRect().centerX();
+            gameEntities.add(paddle);
+
+            double dotSide = blockHeight;
+            double dotX = paddleX + (paddleWidth - dotSide) / 2;
+            double dotY = paddleY - dotSide;
+            dot = new Dot((int) dotX, (int) dotY, (int) dotSide, (int) dotSide);
+            gameEntities.add(dot);
+
+
         }
 
         // Update game entities for next iteration
@@ -170,6 +196,9 @@ public class BreakoutBoardView extends SurfaceView implements SurfaceHolder.Call
                 return;
 
             double elapsed = (now - lastTime) / 1000.0;
+            
+            // Update paddle position
+            paddle.move((int)lastKnownPaddlePosition);
 
             lastTime = now;
         }

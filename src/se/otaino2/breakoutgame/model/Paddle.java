@@ -9,8 +9,9 @@ public class Paddle extends Entity {
         super(posX, posY, width, height, Color.BLUE);
     }
     
-    public void offset(int dx) {
+    public void move(int position) {
         Rect rect = getRect();
+        int dx = position - rect.centerX();
         rect.offset(dx, 0);
     }
 }
