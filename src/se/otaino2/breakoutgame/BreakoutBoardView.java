@@ -12,6 +12,7 @@ import se.otaino2.breakoutgame.model.Entity;
 import se.otaino2.breakoutgame.model.Paddle;
 import android.content.Context;
 import android.graphics.Canvas;
+import android.graphics.Paint;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.view.MotionEvent;
@@ -104,6 +105,7 @@ public class BreakoutBoardView extends SurfaceView implements SurfaceHolder.Call
         // Entities
         private List<Entity> gameEntities;
         private ArrayList<Block> blocks;
+        private ArrayList<Block> destroyedBlocks;
         private Paddle paddle;
         private Dot dot;
 
@@ -160,6 +162,7 @@ public class BreakoutBoardView extends SurfaceView implements SurfaceHolder.Call
             background = new Background(width, height);
             gameEntities = new ArrayList<Entity>();
             blocks = new ArrayList<Block>();
+            destroyedBlocks = new ArrayList<Block>();
             double blockWidth = width / (1.1 * NBR_OF_BLOCKS + 0.1);
             double blockHeight = 0.1 * blockWidth;
             for (int i = 0; i < NBR_OF_BLOCKS; i++) {
@@ -221,6 +224,7 @@ public class BreakoutBoardView extends SurfaceView implements SurfaceHolder.Call
                 if (dot.isColliding(b)) {
                     iter.remove();
                     gameEntities.remove(b);
+                    destroyedBlocks.add(b);
                     dot.move(0, 0, dot.getVx(), -dot.getVy());
                 }
             }
@@ -255,6 +259,17 @@ public class BreakoutBoardView extends SurfaceView implements SurfaceHolder.Call
         private void renderEntities(Canvas c) {
             for (Entity e : gameEntities) {
                 c.drawRect(e.getRect(), e.getPaint());
+            }
+
+            Iterator<Block> iter = destroyedBlocks.iterator();
+            while (iter.hasNext()) {
+                Block b = iter.next();
+                Paint p = b.getPaint();
+                p.setAlpha(p.getAlpha() - 5);
+                c.drawRect(b.getRect(), p);
+                if (p.getAlpha() == 0) {
+                    iter.remove();
+                }
             }
         }
     }
