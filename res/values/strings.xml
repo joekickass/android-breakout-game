@@ -3,5 +3,6 @@
 
     <string name="app_name">BreakoutGame</string>
     <string name="menu_reset">Reset game</string>
+    <string name="lives">%d Lives Left</string>
 
 </resources>

@@ -1,7 +1,6 @@
 package se.otaino2.breakoutgame;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 
@@ -30,6 +29,7 @@ public class BreakoutBoardView extends SurfaceView implements SurfaceHolder.Call
     
     // Touch event position for the paddle
     private double lastKnownPaddlePosition;
+    private BreakoutBoardCallback callback;
 
     public BreakoutBoardView(Context context, AttributeSet attrs) {
         super(context, attrs);
@@ -40,6 +40,10 @@ public class BreakoutBoardView extends SurfaceView implements SurfaceHolder.Call
         // SurfaceView must have focus to get touch events
         setFocusable(true);
         setOnTouchListener(this);
+    }
+
+    public void setCallback(BreakoutBoardCallback callback) {
+        this.callback = callback;
     }
 
     @Override
@@ -54,7 +58,6 @@ public class BreakoutBoardView extends SurfaceView implements SurfaceHolder.Call
     public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
         Log.d(TAG, "Surface changed, resetting game...");
         thread.setSurfaceSize(width, height);
-        thread.reset();
     }
 
     @Override
@@ -93,15 +96,20 @@ public class BreakoutBoardView extends SurfaceView implements SurfaceHolder.Call
         
         // Game constants
         private static final int NBR_OF_BLOCKS = 6;
-        private static final double DOT_SPEED = 400.0; 
-        
+        private static final double DOT_SPEED = 400.0;
+        private static final int NBR_OF_LIVES = 3;
+
+        // Game variables
+        private int nbrOfTriesLeft;
+        private long lastTime;
+
+        // Draw stuff
         private SurfaceHolder surfaceHolder;
         private boolean running;
         private int canvasWidth;
         private int canvasHeight;
         private Background background;
-        private long lastTime;
-        
+
         // Entities
         private List<Entity> gameEntities;
         private ArrayList<Block> blocks;
@@ -111,15 +119,32 @@ public class BreakoutBoardView extends SurfaceView implements SurfaceHolder.Call
 
         public BreakoutBoardThread(SurfaceHolder surfaceHolder) {
             this.surfaceHolder = surfaceHolder;
+            restart();
         }
 
         public void setRunning(boolean running) {
             this.running = running;
         }
 
+        private void dead() {
+            Log.d(TAG, "Bang! You're dead. Resetting...");
+            reset();
+            BreakoutBoardView.this.callback.onGameChanged(--nbrOfTriesLeft);
+            if (nbrOfTriesLeft <= 0) {
+                setRunning(false);
+                BreakoutBoardView.this.callback.onGameFinished();
+            }
+        }
+
+        public void restart() {
+            reset();
+            nbrOfTriesLeft = NBR_OF_LIVES;
+            BreakoutBoardView.this.callback.onGameChanged(nbrOfTriesLeft);
+        }
+
         public void reset() {
             synchronized (surfaceHolder) {
-                resetEntities(canvasWidth, canvasHeight);               
+                resetEntities(canvasWidth, canvasHeight);
             }
         }
 
@@ -154,7 +179,7 @@ public class BreakoutBoardView extends SurfaceView implements SurfaceHolder.Call
             synchronized (surfaceHolder) {
                 canvasWidth = width;
                 canvasHeight = height;
-                reset();
+                restart();
             }
         }
 
@@ -185,10 +210,11 @@ public class BreakoutBoardView extends SurfaceView implements SurfaceHolder.Call
             double dotSide = blockHeight;
             double dotX = paddleX + (paddleWidth - dotSide) / 2;
             double dotY = paddleY - dotSide;
-            double startAngle = Math.PI * Math.random() * -0.25; // Starting angle should be somewhat upwards
+            double startAngle = Math.PI * Math.random() * 0.25; // Starting angle should be somewhat upwards
             Log.d(TAG, "seed:" + startAngle);
             double vx = DOT_SPEED * Math.sin(startAngle);
-            double vy = DOT_SPEED * Math.cos(startAngle);
+            double vy = -DOT_SPEED * Math.cos(startAngle);
+            Log.d(TAG, "x:" + dotX + ", y:" + dotY + ", side:" + dotSide);
             Log.d(TAG, "vx:" + vx + ", vy:" + vy);
             dot = new Dot((int) dotX, (int) dotY, (int) dotSide, (int) dotSide, vx, vy);
             gameEntities.add(dot);
@@ -203,7 +229,7 @@ public class BreakoutBoardView extends SurfaceView implements SurfaceHolder.Call
                 return;
 
             double elapsed = (now - lastTime) / 1000.0;
-            
+
             // Update paddle position
             paddle.move(lastKnownPaddlePosition);
             
@@ -241,7 +267,7 @@ public class BreakoutBoardView extends SurfaceView implements SurfaceHolder.Call
             
             // Check if game over
             if (dot.getY() > canvasHeight) {
-                reset();
+                dead();
             }
             
             lastTime = now;
@@ -261,6 +287,9 @@ public class BreakoutBoardView extends SurfaceView implements SurfaceHolder.Call
         private void renderEntities(Canvas c) {
             for (Entity e : gameEntities) {
                 c.drawRect(e.getRect(), e.getPaint());
+                if (e instanceof Dot) {
+                    Log.d(TAG, "drawing dot: " + dot.getRect().centerX() + ", " + dot.getRect().centerY());
+                }
             }
 
             Iterator<Block> iter = destroyedBlocks.iterator();
