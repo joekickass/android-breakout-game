@@ -4,6 +4,9 @@ import android.graphics.Paint;
 import android.graphics.Rect;
 
 public class Entity {
+
+    private static final int ANGLE_MOD = 5;
+
     private Rect rect;
     private Paint paint;
 
@@ -24,5 +27,10 @@ public class Entity {
     public boolean isColliding(Entity entity) {
         Rect other = entity.getRect();
         return rect.intersects(other.left, other.top, other.right, other.bottom);
+    }
+
+    public int getCollidingAngle(Entity entity) {
+        Rect other = entity.getRect();
+        return ANGLE_MOD * (rect.centerX() - other.centerX());
     }
 }

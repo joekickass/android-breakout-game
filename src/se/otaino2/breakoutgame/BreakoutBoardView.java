@@ -215,7 +215,8 @@ public class BreakoutBoardView extends SurfaceView implements SurfaceHolder.Call
             // Check if dot collides with paddle
             if (dot.isColliding(paddle)) {
                 // New direction depends on where the dot hits the paddle
-                dot.move(-dx, -dy, dot.getVx(), -dot.getVy());
+                int vx = dot.getCollidingAngle(paddle);
+                dot.move(-dx, -dy, vx, -dot.getVy());
             }
             
             // Check if dot hits block
