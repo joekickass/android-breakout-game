@@ -214,7 +214,8 @@ public class BreakoutBoardView extends SurfaceView implements SurfaceHolder.Call
             
             // Check if dot collides with paddle
             if (dot.isColliding(paddle)) {
-                dot.move(0, 0, dot.getVx(), -dot.getVy());
+                // New direction depends on where the dot hits the paddle
+                dot.move(-dx, -dy, dot.getVx(), -dot.getVy());
             }
             
             // Check if dot hits block
@@ -225,16 +226,16 @@ public class BreakoutBoardView extends SurfaceView implements SurfaceHolder.Call
                     iter.remove();
                     gameEntities.remove(b);
                     destroyedBlocks.add(b);
-                    dot.move(0, 0, dot.getVx(), -dot.getVy());
+                    dot.move(-dx, -dy, dot.getVx(), -dot.getVy());
                 }
             }
             
             // Check if dot hits walls
             if (dot.getX() < 0 || dot.getX() > canvasWidth) {
-                dot.move(0, 0, -dot.getVx(), dot.getVy());
+                dot.move(-dx, -dy, -dot.getVx(), dot.getVy());
             }
             if (dot.getY() < 0) {
-                dot.move(0, 0, dot.getVx(), -dot.getVy());
+                dot.move(-dx, -dy, dot.getVx(), -dot.getVy());
             }
             
             // Check if game over
